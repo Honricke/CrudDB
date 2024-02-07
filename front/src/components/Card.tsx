@@ -3,7 +3,8 @@ import { useContext, useState } from "react";
 import { ItemsContext } from "../context/Items";
 
 interface Props{
-    name: string
+    id: number,
+    name: string,
 }
 
 function Card(props: Props) {
@@ -17,9 +18,19 @@ function Card(props: Props) {
             setToogleEdit(true)
             setEditInput(name)
         }else{
+            context?.editItem(editInput,{
+                "id": props.id,
+                "name": name
+            })
             setToogleEdit(false)
-            context?.editItem(editInput,name)
             setName(editInput)
+        }
+    }
+
+    //@ts-ignore
+    const enterKey = (e) => {
+        if (e.key === 'Enter') {
+            changeEdit()
         }
     }
 
@@ -27,14 +38,20 @@ function Card(props: Props) {
         <div className="card">
             {!toogleEdit && name}
             {toogleEdit && <input 
+                autoFocus
                 type='text'
                 value={editInput}
                 onChange={e => setEditInput(e.target.value)}
+                className="inputEdit"
+                onKeyDown={enterKey}
             />}
             <section className="cardButton">
                 {!toogleEdit && <FaEdit onClick={() => changeEdit()}/>}
                 {toogleEdit && <FaCheck onClick={() => changeEdit()}/>}
-                <FaTrash onClick={() => context?.removeItem(name)}/>
+                <FaTrash onClick={() => context?.removeItem({
+                    "id": props.id,
+                    "name": name
+                })}/>
             </section>
         </div>
     );
