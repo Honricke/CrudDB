@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from type.types import UpdateType, ItemType, RequestType
+from type.types import ItemType, InsertType
 import sql.operations as op
 
 
@@ -12,15 +12,20 @@ def get_names():
 
 
 @router.post("/insert-name", response_model=ItemType)
-def insert_name(item: RequestType):
-    return op.insert_name(item)
+def insert_name(req: InsertType):
+    return op.insert_item(req)
 
 
-@router.delete("/remove-name", response_model=ItemType)
-def remove_name(item: ItemType):
-    return op.remove_name(item)
+@router.put("/remove-name", response_model=ItemType)
+def remove_item(req: ItemType):
+    return op.remove_item(req)
 
 
 @router.put("/update-name", response_model=ItemType)
-def update_name(item: UpdateType):
-    return op.update_name(item)
+def update_name(req: ItemType):
+    return op.update_name(req)
+
+
+@router.put("/update-qtd", response_model=ItemType)
+def update_name(req: ItemType):
+    return op.update_qtd(req)

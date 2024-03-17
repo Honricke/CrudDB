@@ -1,59 +1,79 @@
 from .connect import operator, session
-from type.types import ItemType, RequestType, UpdateType
+from type.types import ItemType, InsertType
 import json
 from timeit import default_timer as timer
+from datetime import datetime, timezone
 
 
 def get_names():
-    start = timer()
+    def serialize_datetime(obj):
+        if isinstance(obj, datetime):
+            return obj.strftime("%Y-%m-%d %H:%M:%S")
+        raise TypeError("Tipo de objeto não serializável")
 
-    operator.execute("SELECT * FROM items")
-    response = json.dumps(operator.fetchall())
+    sqlCode = "SELECT * FROM items WHERE remove_date IS NULL"
+
+    operator.execute(sqlCode)
+    response = json.dumps(operator.fetchall(), default=serialize_datetime)
     newRes = json.loads(response)
-
-    end = timer()
-    print(end - start)
 
     return newRes
 
 
-def insert_name(item: RequestType):
-    sqlCode = "INSERT INTO items(name) VALUES(%s) RETURNING id"
-    data = [f"{item.name}"]
-    operator.execute(sqlCode, data)
+def insert_item(item: InsertType):
+    def serialize_datetime(obj):
+        if isinstance(obj, datetime):
+            return obj.strftime("%Y-%m-%d %H:%M:%S")
+        raise TypeError("Tipo de objeto não serializável")
+
+    sqlCode = "SELECT * FROM items WHERE name = %s"
+    operator.execute(sqlCode, (item.name,))
+    res = json.dumps(operator.fetchall(), default=serialize_datetime)
+    
+    if len(res) == 0:
+        sqlCode = "INSERT INTO items(name,qtd,add_date) VALUES(%s,%s,%s) RETURNING id"
+
+        operator.execute(
+            sqlCode,
+            (
+                item.name,
+                item.qtd,
+                datetime.now(),
+            ),
+        )
+        session.commit()
+
+        newId = operator.fetchone()["id"]
+
+    return {"id": newId, "name": item.name, "qtd": item.qtd}
+
+
+def remove_item(item: ItemType):
+    sqlCode = "UPDATE items SET remove_date = %s WHERE id = %s"
+
+    operator.execute(sqlCode, (datetime.now(), item.id))
     session.commit()
 
-    newId = operator.fetchone()["id"]
-    return {"id": newId, "name": item.name}
+    return item
 
 
-def remove_name(item: ItemType):
-    sqlCode = "DELETE FROM items WHERE id = %s"
-    data = [f"{item.id}"]
+def update_name(item: ItemType):
+    print(item)
+    sqlCode = "UPDATE items SET name = %s WHERE id = %s "
+    data = [f"{item.name}", f"{item.id}"]
+
     operator.execute(sqlCode, data)
     session.commit()
 
     return item
 
 
-def update_name(item: UpdateType):
-    sqlCode = "UPDATE items SET name = %s WHERE id = %s "
-    data = [f"{item.newName}",f"{item.id}"]
-    operator.execute(sqlCode,data)
-    session.commit
+def update_qtd(item: ItemType):
+    print(item)
+    sqlCode = "UPDATE items SET qtd = %s WHERE id = %s"
+    data = [f"{item.qtd}", f"{item.id}"]
 
-    return {
-        "id": item.id,
-        "name": item.newName
-    }
+    operator.execute(sqlCode, data)
+    session.commit()
 
-
-# def get_names():
-#     start = timer()
-#     operator.execute("SELECT * FROM items")
-#     response = operator.fetchall()
-
-#     data = [dict(row) for row in response]
-#     end = timer()
-#     print(end - start)
-#     return data
+    return item
