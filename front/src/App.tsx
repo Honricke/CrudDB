@@ -5,7 +5,7 @@ import { FaSearch } from "react-icons/fa";
 import { IoMdSend } from "react-icons/io";
 import Card from "./components/Card";
 import { ItemType } from "./context/Items";
-
+//
 function App() {
   const [search, setSearch] = useState<string>("");
   const [addName, setAddInput] = useState<string>("");
