@@ -21,30 +21,19 @@ def get_names():
 
 
 def insert_item(item: InsertType):
-    def serialize_datetime(obj):
-        if isinstance(obj, datetime):
-            return obj.strftime("%Y-%m-%d %H:%M:%S")
-        raise TypeError("Tipo de objeto não serializável")
+    sqlCode = "INSERT INTO items(name,qtd,add_date) VALUES(%s,%s,%s) RETURNING id"
 
-    sqlCode = "SELECT * FROM items WHERE name = %s"
-    operator.execute(sqlCode, (item.name,))
-    res = json.dumps(operator.fetchall(), default=serialize_datetime)
-    
-    if len(res) == 0:
-        sqlCode = "INSERT INTO items(name,qtd,add_date) VALUES(%s,%s,%s) RETURNING id"
+    operator.execute(
+        sqlCode,
+        (
+            item.name,
+            item.qtd,
+            datetime.now(),
+        ),
+    )
+    session.commit()
 
-        operator.execute(
-            sqlCode,
-            (
-                item.name,
-                item.qtd,
-                datetime.now(),
-            ),
-        )
-        session.commit()
-
-        newId = operator.fetchone()["id"]
-
+    newId = operator.fetchone()["id"]
     return {"id": newId, "name": item.name, "qtd": item.qtd}
 
 
